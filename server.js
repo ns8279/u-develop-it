@@ -1,11 +1,15 @@
-//Dependencies
+/* 
+    Dependencies
+    =======================================================================================
+*/
+
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const inputCheck = require('./utils/inputCheck.js');
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-//Adding the middleware
+//Adding the middleware=====================================================================
 app.use(express.urlencoded({ extended:false }));
 app.use(express.json());
 //Connect to database
@@ -19,11 +23,11 @@ const db = new sqlite3.Database('./db/election.db', err => {
 
 
 //ROUTES
-//===================================================================
+//==========================================================================================
 //GET
 
 /*
-    GET route to get all the data from the candidates table
+    GET route to get all the data from the candidates and parties table
 */ 
 app.get('/api/candidates', (req,res)=>{
     const sql = `SELECT candidates.*, parties.name
@@ -44,8 +48,26 @@ app.get('/api/candidates', (req,res)=>{
     });
 });
 
+//Party route
+app.get('/api/parties', (req,res)=>{
+    const sql = `SELECT * FROM parties`;
+    const params = [];
+    db.all(sql,params, (err,rows)=>{
+        if(err){
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'Success',
+            data: rows
+        });
+    });
+});
+
+
+
 /*
-    GET a single candidate
+    GET a single candidate and single party
 */
 app.get('/api/candidate/:id', (req,res)=>{
     const sql = `SELECT candidates.*, parties.name 
@@ -68,8 +90,25 @@ app.get('/api/candidate/:id', (req,res)=>{
     });
 });
 
+//Party route
+app.get('/api/party/:id', (req,res)=>{
+    const sql = `SELECT * FROM parties WHERE id = ?`;
+
+    const params = [req.params.id];
+    db.get(sql, params, (err,row)=>{
+        if(err){
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'Success',
+            data: row
+        });
+    });
+});
+
 /*
-    DELETE a candidate
+    DELETE a candidate or a party 
 */
 app.delete('/api/candidate/:id', (req,res)=> {
     const sql = `DELETE FROM candidates WHERE id=?`;
@@ -85,6 +124,23 @@ app.delete('/api/candidate/:id', (req,res)=> {
         });
     });
 });
+
+//Party DELETE
+app.delete('/api/party/:id', (req,res)=> {
+    const sql = `DELETE FROM parties WHERE id=?`;
+    const params = [req.params.id];
+    db.run(sql, params, function(err,result) {
+        if(err){
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'Successfully deleted',
+            changes: this.changes
+        });
+    });
+});
+
 
 //POST 
 /*
@@ -112,6 +168,16 @@ app.post('/api/candidate', ({ body },res) => {
 
 });
 
+/*
+    Candidate ROUTE to Change their party
+*/
+// app.put('/api/candidate/:id', (req,res)=> {
+//     const sql = 'UPDATE candidates SET party_id = ? WHERE id = ?';
+//     const params = [req.body.party_id, req.params.id];
+
+
+// })
+
     
 /*
     Routes to handle request that arent supported by this app 
@@ -122,7 +188,7 @@ app.use((req,res) => {
 })
 
 
-//LISTEN will start the server=======================================
+//LISTEN will start the server================================================================
 db.on('open', () => { //This will start the server after the db connection
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
