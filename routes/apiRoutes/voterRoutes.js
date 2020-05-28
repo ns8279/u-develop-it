@@ -40,12 +40,12 @@ router.get('/voter/:id', (req,res)=>{
 
 //POST Route to create a voter
 router.post('/voter', ({ body }, res) => {
-    // const errors = inputCheck(body, 'first_name', 'last_name', 'email');
+    const errors = inputCheck(body, 'first_name', 'last_name', 'email');
 
-    // if (errors) {
-    // res.status(400).json({ error: errors });
-    // return;
-    // }
+    if (errors) {
+    res.status(400).json({ error: errors });
+    return;
+    }
     const sql = `INSERT INTO voters (first_name, last_name, email) VALUES (?,?,?)`;
     const params = [body.first_name, body.last_name, body.email];
   
