@@ -171,12 +171,27 @@ app.post('/api/candidate', ({ body },res) => {
 /*
     Candidate ROUTE to Change their party
 */
-// app.put('/api/candidate/:id', (req,res)=> {
-//     const sql = 'UPDATE candidates SET party_id = ? WHERE id = ?';
-//     const params = [req.body.party_id, req.params.id];
-
-
-// })
+app.put('/api/candidate/:id', (req,res)=> {
+    //Check for errors
+    const errors = inputCheck(req.body, 'party_id');
+    if(errors){
+        res.status(400).json({ errors: errors });
+    }
+    
+    const sql = 'UPDATE candidates SET party_id = ? WHERE id = ?';
+    const params = [req.body.party_id, req.params.id];
+    //ES5 functiom
+    db.run(sql, params, function(err,result){
+        if(err){
+            res.status(400).json({ error: err.message })
+        }
+        res.json({
+                message: 'Success',
+                data: req.body,
+                changes: this.changes
+        });
+    });
+})
 
     
 /*
